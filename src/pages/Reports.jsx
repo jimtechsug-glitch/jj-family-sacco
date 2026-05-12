@@ -1,6 +1,6 @@
 import React from 'react';
 import { useSacco } from '../context/SaccoContext';
-import { FileText, Download, Wallet, Landmark } from 'lucide-react';
+import { FileText, Download, Wallet, Landmark, Eye } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
@@ -36,7 +36,7 @@ const Reports = () => {
     doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 40);
   };
 
-  const downloadGeneralReport = () => {
+  const getGeneralReportDoc = () => {
     const doc = new jsPDF();
     generatePDFHeader(doc, 'Monthly Financial Report');
 
@@ -66,37 +66,36 @@ const Reports = () => {
         }
       }
     });
-
-    doc.save('sacco-general-report.pdf');
+    return doc;
   };
 
-  const downloadSavingsReport = () => {
+  const getSavingsReportDoc = () => {
     const doc = new jsPDF();
     generatePDFHeader(doc, 'Comprehensive Savings Report');
 
     const tableData = [...savings]
+      .filter(s => s.status === 'Verified')
       .sort((a, b) => new Date(b.date) - new Date(a.date))
       .map(s => [
         s.date,
         getMemberName(s.memberId),
-        s.type,
+        s.paymentMethod || 'Cash',
         `UGX ${Number(s.amount).toLocaleString()}`
       ]);
 
     doc.autoTable({
       startY: 50,
-      head: [['Date', 'Member Name', 'Type', 'Amount']],
+      head: [['Date', 'Member Name', 'Method', 'Amount']],
       body: tableData,
       theme: 'striped',
       headStyles: { fillColor: [16, 185, 129] }, // Success color
       foot: [['', '', 'Total Savings:', `UGX ${totalSavings.toLocaleString()}`]],
       footStyles: { fillColor: [241, 245, 249], textColor: [15, 23, 42], fontStyle: 'bold' }
     });
-
-    doc.save('sacco-savings-report.pdf');
+    return doc;
   };
 
-  const downloadLoansReport = () => {
+  const getLoansReportDoc = () => {
     const doc = new jsPDF();
     generatePDFHeader(doc, 'Comprehensive Loans Report');
 
@@ -129,8 +128,18 @@ const Reports = () => {
         }
       }
     });
+    return doc;
+  };
 
-    doc.save('sacco-loans-report.pdf');
+  const handlePreview = (docFunc) => {
+    const doc = docFunc();
+    const string = doc.output('bloburl');
+    window.open(string, '_blank');
+  };
+
+  const handleDownload = (docFunc, filename) => {
+    const doc = docFunc();
+    doc.save(filename);
   };
 
   return (
@@ -138,7 +147,7 @@ const Reports = () => {
       <div className="flex-between">
         <div>
           <h1>Generate Reports</h1>
-          <p className="text-muted">Export data securely as PDF files</p>
+          <p className="text-muted">Export and view your Sacco data securely</p>
         </div>
       </div>
 
@@ -149,10 +158,14 @@ const Reports = () => {
           </div>
           <h3 style={{ color: 'var(--text-primary)' }}>General Report</h3>
           <p className="text-muted" style={{ marginBottom: '1.5rem' }}>Monthly summary of all inflows, outflows, and available cash.</p>
-          <button className="btn btn-primary" onClick={downloadGeneralReport} style={{ width: '100%' }}>
-            <Download size={18} />
-            Download PDF
-          </button>
+          <div style={{ display: 'flex', gap: '1rem', width: '100%' }}>
+            <button className="btn" onClick={() => handlePreview(getGeneralReportDoc)} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+              <Eye size={18} /> View
+            </button>
+            <button className="btn btn-primary" onClick={() => handleDownload(getGeneralReportDoc, 'general-report.pdf')} style={{ flex: 1 }}>
+              <Download size={18} /> Download
+            </button>
+          </div>
         </div>
 
         <div className="glass-panel card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: '2.5rem' }}>
@@ -161,10 +174,14 @@ const Reports = () => {
           </div>
           <h3 style={{ color: 'var(--text-primary)' }}>Savings Report</h3>
           <p className="text-muted" style={{ marginBottom: '1.5rem' }}>Detailed breakdown of all member deposits and total savings.</p>
-          <button className="btn btn-success" onClick={downloadSavingsReport} style={{ width: '100%' }}>
-            <Download size={18} />
-            Download PDF
-          </button>
+          <div style={{ display: 'flex', gap: '1rem', width: '100%' }}>
+            <button className="btn" onClick={() => handlePreview(getSavingsReportDoc)} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+              <Eye size={18} /> View
+            </button>
+            <button className="btn btn-success" onClick={() => handleDownload(getSavingsReportDoc, 'savings-report.pdf')} style={{ flex: 1 }}>
+              <Download size={18} /> Download
+            </button>
+          </div>
         </div>
 
         <div className="glass-panel card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: '2.5rem' }}>
@@ -173,10 +190,14 @@ const Reports = () => {
           </div>
           <h3 style={{ color: 'var(--text-primary)' }}>Loans Report</h3>
           <p className="text-muted" style={{ marginBottom: '1.5rem' }}>Comprehensive view of all issued loans, balances, and status.</p>
-          <button className="btn btn-danger" onClick={downloadLoansReport} style={{ width: '100%' }}>
-            <Download size={18} />
-            Download PDF
-          </button>
+          <div style={{ display: 'flex', gap: '1rem', width: '100%' }}>
+            <button className="btn" onClick={() => handlePreview(getLoansReportDoc)} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+              <Eye size={18} /> View
+            </button>
+            <button className="btn btn-danger" onClick={() => handleDownload(getLoansReportDoc, 'loans-report.pdf')} style={{ flex: 1 }}>
+              <Download size={18} /> Download
+            </button>
+          </div>
         </div>
       </div>
     </div>
