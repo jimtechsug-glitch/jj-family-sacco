@@ -20,8 +20,13 @@ router.post('/login', async (req, res) => {
       });
     }
 
-    // Check member credentials in MongoDB
-    const member = await Member.findOne({ name: username }); // Simplified for demo
+    // Check member credentials in MongoDB (Check both username and name for compatibility)
+    const member = await Member.findOne({ 
+      $or: [
+        { username: username },
+        { name: username }
+      ]
+    });
     if (member && member.password === password) {
       return res.json({
         user: {
