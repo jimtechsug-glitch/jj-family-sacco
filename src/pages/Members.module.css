@@ -1,0 +1,99 @@
+.membersPage {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  padding-bottom: 80px;
+}
+
+@media (max-width: 768px) {
+  .membersPage {
+    gap: 1.5rem;
+    padding-bottom: 100px;
+  }
+}
+
+.searchBar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+@media (max-width: 768px) {
+  .searchBar {
+    margin-bottom: 1rem;
+  }
+
+  .searchBar input {
+    max-width: 100% !important;
+    flex: 1;
+  }
+}
+
+.roleBadge {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 0.25rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  color: var(--text-primary);
+}
+
+@media (max-width: 480px) {
+  .roleBadge {
+    font-size: 0.7rem;
+    padding: 0.2rem 0.6rem;
+  }
+}
+
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.modal {
+  width: 100%;
+  max-width: 450px;
+  padding: 2rem;
+  animation: fadeIn 0.3s ease;
+}
+
+@media (max-width: 768px) {
+  .modal {
+    max-width: 100%;
+    padding: 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .modal {
+    padding: 1.25rem;
+  }
+}
+
+.modalActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 2rem;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 480px) {
+  .modalActions {
+    flex-direction: column;
+  }
+
+  .modalActions button {
+    width: 100%;
+  }
+}
