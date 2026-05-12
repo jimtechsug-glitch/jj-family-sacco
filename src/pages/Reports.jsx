@@ -1,8 +1,8 @@
 import React from 'react';
 import { useSacco } from '../context/SaccoContext';
 import { FileText, Download, Wallet, Landmark, Eye } from 'lucide-react';
-import { jsPDF } from 'jspdf';
-import autoTable from 'jspdf-autotable';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 
 const Reports = () => {
   const { 
@@ -132,14 +132,24 @@ const Reports = () => {
   };
 
   const handlePreview = (docFunc) => {
-    const doc = docFunc();
-    const string = doc.output('bloburl');
-    window.open(string, '_blank');
+    try {
+      const doc = docFunc();
+      const string = doc.output('bloburl');
+      window.open(string, '_blank');
+    } catch (err) {
+      console.error('PDF Preview Error:', err);
+      alert('Failed to generate preview: ' + err.message);
+    }
   };
 
   const handleDownload = (docFunc, filename) => {
-    const doc = docFunc();
-    doc.save(filename);
+    try {
+      const doc = docFunc();
+      doc.save(filename);
+    } catch (err) {
+      console.error('PDF Download Error:', err);
+      alert('Failed to download report: ' + err.message);
+    }
   };
 
   return (
