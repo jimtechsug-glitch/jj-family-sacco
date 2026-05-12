@@ -15,14 +15,44 @@ const MemberDashboard = () => {
   } = useSacco();
 
   const [showPayModal, setShowPayModal] = useState(false);
+  const [showLoanModal, setShowLoanModal] = useState(false);
   const [payAmount, setPayAmount] = useState('');
   const [transactionId, setTransactionId] = useState('');
+  const [loanRequest, setLoanRequest] = useState({ principal: '', repaymentMonths: 1, reason: '' });
   const [isProcessing, setIsProcessing] = useState(false);
 
   const personalSavings = getMemberPersonalSavings(user.id);
   const activeLoan = getMemberActiveLoan(user.id);
   const loanEligibility = getMemberLoanEligibility(user.id);
   const recentSavings = getMemberRecentSavings(user.id);
+
+  const handleLoanApplication = async (e) => {
+    e.preventDefault();
+    if (!loanRequest.principal || Number(loanRequest.principal) <= 0) return;
+    if (Number(loanRequest.principal) > loanEligibility) {
+      alert(`Your maximum loan eligibility is UGX ${loanEligibility.toLocaleString()}.`);
+      return;
+    }
+
+    setIsProcessing(true);
+    try {
+      await addLoan({
+        memberId: user.id,
+        principal: Number(loanRequest.principal),
+        interestRate: 10, // Default interest rate
+        repaymentMonths: Number(loanRequest.repaymentMonths),
+        reason: loanRequest.reason,
+        status: 'Pending'
+      });
+      alert('Loan application submitted successfully! Please wait for admin approval.');
+      setShowLoanModal(false);
+      setLoanRequest({ principal: '', repaymentMonths: 1, reason: '' });
+    } catch (err) {
+      alert('Failed to apply for loan: ' + err.message);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   let loanBalance = 0;
   if (activeLoan) {
@@ -78,6 +108,14 @@ const MemberDashboard = () => {
           >
             <img src={AirtelMoneyLogo} alt="Airtel" style={{ height: '18px' }} />
             Pay via Airtel
+          </button>
+          <button 
+            className="btn btn-secondary" 
+            onClick={() => setShowLoanModal(true)}
+            disabled={activeLoan || loanEligibility === 0}
+          >
+            <Send size={18} />
+            Apply for Loan
           </button>
           <button className="btn btn-primary" onClick={handlePrint}>
             <Download size={18} />
@@ -226,6 +264,79 @@ const MemberDashboard = () => {
                   disabled={isProcessing}
                 >
                   {isProcessing ? 'Processing...' : 'Send Payment Request'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+      {/* Loan Application Modal */}
+      {showLoanModal && (
+        <div style={{ 
+          position: 'fixed', 
+          top: 0, left: 0, right: 0, bottom: 0, 
+          background: 'rgba(0,0,0,0.5)', 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center', 
+          zIndex: 1000, 
+          backdropFilter: 'blur(4px)' 
+        }}>
+          <div className="glass-panel" style={{ width: '100%', maxWidth: '450px', padding: '2rem' }}>
+            <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+              <Landmark size={40} style={{ color: 'var(--primary)', marginBottom: '1rem' }} />
+              <h2>Apply for a Loan</h2>
+              <p className="text-muted">Maximum Eligibility: <strong>UGX {loanEligibility.toLocaleString()}</strong></p>
+            </div>
+            <form onSubmit={handleLoanApplication}>
+              <div className="form-group">
+                <label>Requested Amount (UGX)</label>
+                <input 
+                  type="number" 
+                  className="form-control" 
+                  value={loanRequest.principal}
+                  onChange={(e) => setLoanRequest({...loanRequest, principal: e.target.value})}
+                  required
+                  max={loanEligibility}
+                  placeholder="e.g. 500000"
+                />
+              </div>
+              <div className="form-group">
+                <label>Repayment Period (Months)</label>
+                <select 
+                  className="form-control"
+                  value={loanRequest.repaymentMonths}
+                  onChange={(e) => setLoanRequest({...loanRequest, repaymentMonths: e.target.value})}
+                  required
+                >
+                  {[1, 2, 3, 4, 5, 6].map(m => (
+                    <option key={m} value={m}>{m} Month{m > 1 ? 's' : ''}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="form-group">
+                <label>Reason for Loan</label>
+                <textarea 
+                  className="form-control"
+                  value={loanRequest.reason}
+                  onChange={(e) => setLoanRequest({...loanRequest, reason: e.target.value})}
+                  required
+                  placeholder="e.g. Business expansion, School fees..."
+                  style={{ minHeight: '80px', resize: 'vertical' }}
+                />
+              </div>
+              <div style={{ background: 'rgba(59, 130, 246, 0.1)', padding: '1rem', borderRadius: '8px', marginBottom: '1.5rem', fontSize: '0.9rem' }}>
+                <p style={{ margin: 0 }}><strong>Estimated Interest:</strong> 10% Flat Rate</p>
+                <p style={{ margin: '0.25rem 0 0 0' }}><strong>Total Repayable:</strong> UGX {(Number(loanRequest.principal) * 1.1).toLocaleString()}</p>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
+                <button type="button" className="btn" onClick={() => setShowLoanModal(false)} disabled={isProcessing}>Cancel</button>
+                <button 
+                  type="submit" 
+                  className="btn btn-primary"
+                  disabled={isProcessing}
+                >
+                  {isProcessing ? 'Submitting...' : 'Submit Application'}
                 </button>
               </div>
             </form>

@@ -16,6 +16,7 @@ router.get('/', async (req, res) => {
       repaymentMonths: l.repaymentMonths,
       amountPaid: l.repayments.reduce((acc, r) => acc + r.amount, 0),
       status: l.status,
+      reason: l.reason || '',
       dateIssued: l.date.toISOString().split('T')[0]
     })));
   } catch (error) {
@@ -35,6 +36,7 @@ router.get('/member/:memberId', async (req, res) => {
       repaymentMonths: l.repaymentMonths,
       amountPaid: l.repayments.reduce((acc, r) => acc + r.amount, 0),
       status: l.status,
+      reason: l.reason || '',
       dateIssued: l.date.toISOString().split('T')[0]
     })));
   } catch (error) {
@@ -45,7 +47,7 @@ router.get('/member/:memberId', async (req, res) => {
 // POST /api/loans - Create new loan
 router.post('/', async (req, res) => {
   try {
-    const { memberId, principal, interestRate, repaymentMonths } = req.body;
+    const { memberId, principal, interestRate, repaymentMonths, reason = '', status = 'Active' } = req.body;
 
     if (!memberId || !principal || interestRate === undefined || !repaymentMonths) {
       return res.status(400).json({ error: 'Missing required loan fields' });
@@ -66,7 +68,9 @@ router.post('/', async (req, res) => {
       memberId,
       principal: Number(principal),
       interestRate: Number(interestRate),
-      repaymentMonths: Number(repaymentMonths)
+      repaymentMonths: Number(repaymentMonths),
+      reason,
+      status
     });
 
     await newLoan.save();
@@ -79,6 +83,7 @@ router.post('/', async (req, res) => {
       repaymentMonths: newLoan.repaymentMonths,
       amountPaid: 0,
       status: newLoan.status,
+      reason: newLoan.reason || '',
       dateIssued: newLoan.date.toISOString().split('T')[0]
     });
   } catch (error) {
@@ -148,6 +153,36 @@ router.get('/stats/total-repayments', async (req, res) => {
     ]);
     const total = result.length > 0 ? result[0].total : 0;
     res.json({ total });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// PATCH /api/loans/:id/approve - Approve a loan
+router.patch('/:id/approve', async (req, res) => {
+  try {
+    const loan = await Loan.findByIdAndUpdate(
+      req.params.id,
+      { status: 'Active', date: new Date() }, // Reset date to approval date
+      { new: true }
+    );
+    if (!loan) return res.status(404).json({ error: 'Loan not found' });
+    res.json(loan);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// PATCH /api/loans/:id/reject - Reject a loan
+router.patch('/:id/reject', async (req, res) => {
+  try {
+    const loan = await Loan.findByIdAndUpdate(
+      req.params.id,
+      { status: 'Rejected' },
+      { new: true }
+    );
+    if (!loan) return res.status(404).json({ error: 'Loan not found' });
+    res.json(loan);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

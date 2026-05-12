@@ -131,10 +131,22 @@ export const loansAPI = {
     return fetchAPI(`/loans/member/${memberId}`);
   },
 
-  create: async (memberId, principal, interestRate, repaymentMonths) => {
+  create: async (memberId, principal, interestRate, repaymentMonths, reason = '', status = 'Active') => {
     return fetchAPI('/loans', {
       method: 'POST',
-      body: JSON.stringify({ memberId, principal, interestRate, repaymentMonths }),
+      body: JSON.stringify({ memberId, principal, interestRate, repaymentMonths, reason, status }),
+    });
+  },
+
+  approve: async (id) => {
+    return fetchAPI(`/loans/${id}/approve`, {
+      method: 'PATCH',
+    });
+  },
+
+  reject: async (id) => {
+    return fetchAPI(`/loans/${id}/reject`, {
+      method: 'PATCH',
     });
   },
 

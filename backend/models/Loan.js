@@ -10,7 +10,8 @@ const loanSchema = new mongoose.Schema({
   principal: { type: Number, required: true },
   interestRate: { type: Number, required: true },
   repaymentMonths: { type: Number, required: true },
-  status: { type: String, enum: ['Active', 'Paid'], default: 'Active' },
+  status: { type: String, enum: ['Pending', 'Active', 'Paid', 'Rejected'], default: 'Pending' },
+  reason: { type: String, default: '' },
   date: { type: Date, default: Date.now },
   repayments: [repaymentSchema]
 });

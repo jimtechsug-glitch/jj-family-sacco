@@ -3,13 +3,14 @@ import { useSacco } from '../context/SaccoContext';
 import { Landmark, Plus, ArrowRight } from 'lucide-react';
 
 const Loans = () => {
-  const { loans, members, getMemberName, addLoan, recordLoanRepayment } = useSacco();
+  const { loans, members, getMemberName, addLoan, approveLoan, rejectLoan, recordLoanRepayment } = useSacco();
   const [showIssueModal, setShowIssueModal] = useState(false);
   const [showRepayModal, setShowRepayModal] = useState(false);
   const [selectedLoan, setSelectedLoan] = useState(null);
+  const [activeTab, setActiveTab] = useState('active'); // 'active' or 'pending'
   const [isLoading, setIsLoading] = useState(false);
   
-  const [newLoan, setNewLoan] = useState({ memberId: '', principal: '', interestRate: '5', repaymentMonths: '12' });
+  const [newLoan, setNewLoan] = useState({ memberId: '', principal: '', interestRate: '10', repaymentMonths: '6', reason: 'Admin issued' });
   const [repayAmount, setRepayAmount] = useState('');
 
   const handleIssueLoan = async (e) => {
@@ -21,12 +22,40 @@ const Loans = () => {
           memberId: newLoan.memberId, 
           principal: Number(newLoan.principal), 
           interestRate: Number(newLoan.interestRate),
-          repaymentMonths: Number(newLoan.repaymentMonths)
+          repaymentMonths: Number(newLoan.repaymentMonths),
+          reason: newLoan.reason,
+          status: 'Active'
         });
-        setNewLoan({ memberId: '', principal: '', interestRate: '5', repaymentMonths: '12' });
+        setNewLoan({ memberId: '', principal: '', interestRate: '10', repaymentMonths: '6', reason: 'Admin issued' });
         setShowIssueModal(false);
       } catch (err) {
         alert('Failed to issue loan: ' + err.message);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+  };
+
+  const handleApprove = async (id) => {
+    if (window.confirm('Are you sure you want to approve this loan? The money will be deducted from the Sacco balance.')) {
+      setIsLoading(true);
+      try {
+        await approveLoan(id);
+      } catch (err) {
+        alert('Approval failed: ' + err.message);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+  };
+
+  const handleReject = async (id) => {
+    if (window.confirm('Are you sure you want to reject this loan application?')) {
+      setIsLoading(true);
+      try {
+        await rejectLoan(id);
+      } catch (err) {
+        alert('Rejection failed: ' + err.message);
       } finally {
         setIsLoading(false);
       }
@@ -55,6 +84,11 @@ const Loans = () => {
     setShowRepayModal(true);
   };
 
+  const pendingCount = loans.filter(l => l.status === 'Pending').length;
+  const filteredLoans = activeTab === 'pending' 
+    ? loans.filter(l => l.status === 'Pending')
+    : loans.filter(l => l.status !== 'Pending');
+
   return (
     <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
       <div className="flex-between">
@@ -68,40 +102,65 @@ const Loans = () => {
         </button>
       </div>
 
+      <div style={{ display: 'flex', gap: '1rem', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.5rem' }}>
+        <button 
+          onClick={() => setActiveTab('active')}
+          style={{ 
+            background: 'none', border: 'none', color: activeTab === 'active' ? 'var(--primary)' : 'var(--text-secondary)',
+            fontWeight: activeTab === 'active' ? '700' : '500', cursor: 'pointer', padding: '0.5rem 1rem',
+            borderBottom: activeTab === 'active' ? '2px solid var(--primary)' : 'none'
+          }}
+        >
+          Active / Paid Loans
+        </button>
+        <button 
+          onClick={() => setActiveTab('pending')}
+          style={{ 
+            background: 'none', border: 'none', color: activeTab === 'pending' ? 'var(--warning)' : 'var(--text-secondary)',
+            fontWeight: activeTab === 'pending' ? '700' : '500', cursor: 'pointer', padding: '0.5rem 1rem',
+            borderBottom: activeTab === 'pending' ? '2px solid var(--warning)' : 'none',
+            display: 'flex', alignItems: 'center', gap: '0.5rem'
+          }}
+        >
+          Pending Applications {pendingCount > 0 && <span style={{ background: 'var(--danger)', color: 'white', borderRadius: '50%', width: '20px', height: '20px', fontSize: '0.7rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{pendingCount}</span>}
+        </button>
+      </div>
+
       <div className="glass-panel card">
         <div className="table-container">
           <table>
             <thead>
               <tr>
-                <th>Loan ID</th>
                 <th>Date</th>
                 <th>Member</th>
                 <th>Principal</th>
-                <th>Interest</th>
-                <th>Balance</th>
+                <th>Period</th>
                 <th>Status</th>
+                <th>Reason / Detail</th>
                 <th>Action</th>
               </tr>
             </thead>
             <tbody>
-              {loans.slice().reverse().map(loan => {
+              {filteredLoans.slice().reverse().map(loan => {
                 const totalDue = loan.principal + (loan.principal * loan.interestRate / 100);
-                const balance = totalDue - loan.amountPaid;
+                const balance = totalDue - (loan.amountPaid || 0);
                 
                 return (
                   <tr key={loan.id}>
-                    <td className="text-muted">#{loan.id}</td>
                     <td>{loan.dateIssued}</td>
                     <td style={{ fontWeight: '500' }}>{getMemberName(loan.memberId)}</td>
-                    <td>UGX {loan.principal.toLocaleString()}</td>
-                    <td>{loan.interestRate}%</td>
-                    <td className={balance > 0 ? 'text-danger' : 'text-success'}>
-                      UGX {balance.toLocaleString()}
-                    </td>
+                    <td style={{ fontWeight: '600' }}>UGX {loan.principal.toLocaleString()}</td>
+                    <td className="text-muted">{loan.repaymentMonths} Mo</td>
                     <td>
                       <span style={{ 
-                        background: loan.status === 'Active' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(16, 185, 129, 0.2)', 
-                        color: loan.status === 'Active' ? 'var(--danger)' : 'var(--success)', 
+                        background: 
+                          loan.status === 'Active' ? 'rgba(239, 68, 68, 0.2)' : 
+                          loan.status === 'Pending' ? 'rgba(245, 158, 11, 0.2)' : 
+                          'rgba(16, 185, 129, 0.2)', 
+                        color: 
+                          loan.status === 'Active' ? 'var(--danger)' : 
+                          loan.status === 'Pending' ? 'var(--warning)' : 
+                          'var(--success)', 
                         padding: '0.25rem 0.75rem', 
                         borderRadius: '999px', 
                         fontSize: '0.8rem',
@@ -110,24 +169,45 @@ const Loans = () => {
                         {loan.status}
                       </span>
                     </td>
+                    <td style={{ fontSize: '0.85rem' }}>
+                      <div className="text-muted">{loan.reason}</div>
+                      {loan.status === 'Active' && <div className="text-danger">Bal: UGX {balance.toLocaleString()}</div>}
+                    </td>
                     <td>
                       {loan.status === 'Active' && (
                         <button 
-                          className="btn" 
-                          style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem', background: 'var(--primary)', color: 'white' }}
+                          className="btn btn-sm btn-primary" 
                           onClick={() => openRepayModal(loan)}
                           disabled={isLoading}
                         >
                           Repay
                         </button>
                       )}
+                      {loan.status === 'Pending' && (
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                          <button 
+                            className="btn btn-sm btn-success" 
+                            onClick={() => handleApprove(loan.id)}
+                            disabled={isLoading}
+                          >
+                            Approve
+                          </button>
+                          <button 
+                            className="btn btn-sm btn-danger" 
+                            onClick={() => handleReject(loan.id)}
+                            disabled={isLoading}
+                          >
+                            Reject
+                          </button>
+                        </div>
+                      )}
                     </td>
                   </tr>
                 )
               })}
-              {loans.length === 0 && (
+              {filteredLoans.length === 0 && (
                 <tr>
-                  <td colSpan="8" style={{ textAlign: 'center', padding: '2rem' }}>No loans found.</td>
+                  <td colSpan="7" style={{ textAlign: 'center', padding: '3rem' }}>No {activeTab === 'pending' ? 'pending applications' : 'loans'} found.</td>
                 </tr>
               )}
             </tbody>
@@ -185,6 +265,17 @@ const Loans = () => {
                   onChange={(e) => setNewLoan({...newLoan, repaymentMonths: e.target.value})}
                   required
                   min="1"
+                />
+              </div>
+              <div className="form-group">
+                <label>Reason / Note</label>
+                <textarea 
+                  className="form-control"
+                  value={newLoan.reason}
+                  onChange={(e) => setNewLoan({...newLoan, reason: e.target.value})}
+                  required
+                  placeholder="e.g. Approved by board"
+                  style={{ minHeight: '60px' }}
                 />
               </div>
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '2rem' }}>

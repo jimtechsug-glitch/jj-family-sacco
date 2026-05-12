@@ -172,13 +172,39 @@ export const SaccoProvider = ({ children }) => {
         loanData.memberId,
         loanData.principal,
         loanData.interestRate,
-        loanData.repaymentMonths
+        loanData.repaymentMonths,
+        loanData.reason || '',
+        loanData.status || 'Active'
       );
       await refreshData();
-      console.log("✅ Loan created:", newLoan.principal);
+      console.log("✅ Loan operation successful:", newLoan.principal);
       return newLoan;
     } catch (err) {
-      console.error("❌ Failed to add loan:", err);
+      console.error("❌ Failed to process loan:", err);
+      setError(err.message);
+      throw err;
+    }
+  };
+
+  const approveLoan = async (id) => {
+    try {
+      await api.loansAPI.approve(id);
+      await refreshData();
+      console.log("✅ Loan approved");
+    } catch (err) {
+      console.error("❌ Failed to approve loan:", err);
+      setError(err.message);
+      throw err;
+    }
+  };
+
+  const rejectLoan = async (id) => {
+    try {
+      await api.loansAPI.reject(id);
+      await refreshData();
+      console.log("✅ Loan rejected");
+    } catch (err) {
+      console.error("❌ Failed to reject loan:", err);
       setError(err.message);
       throw err;
     }
@@ -285,6 +311,8 @@ export const SaccoProvider = ({ children }) => {
       addSaving,
       verifySaving,
       addLoan,
+      approveLoan,
+      rejectLoan,
       recordLoanRepayment,
       processAirtelPayment,
       getMemberName,
