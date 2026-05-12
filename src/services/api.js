@@ -152,7 +152,7 @@ export const loansAPI = {
 
 export const airtelMoneyAPI = {
   processPayment: async (memberId, amount, memberPhoneNumber) => {
-    return fetchAPI('/airtel-money', {
+    return fetchAPI('/members/airtel-money', {
       method: 'POST',
       body: JSON.stringify({ 
         memberId, 

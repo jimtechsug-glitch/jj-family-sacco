@@ -24,7 +24,7 @@ router.post('/login', async (req, res) => {
     const member = await Member.findOne({ name: username }); // Simplified for demo
     if (member && member.password === password) {
       return res.json({
-        user: { 
+        user: {
           id: member._id,
           name: member.name,
           role: member.role,
