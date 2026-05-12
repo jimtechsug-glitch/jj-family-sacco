@@ -70,10 +70,30 @@ router.post('/', async (req, res) => {
 router.get('/stats/total', async (req, res) => {
   try {
     const result = await Savings.aggregate([
+      { $match: { status: 'Verified' } },
       { $group: { _id: null, total: { $sum: "$amount" } } }
     ]);
     const total = result.length > 0 ? result[0].total : 0;
     res.json({ total });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// PATCH /api/savings/:id/verify - Verify a pending saving
+router.patch('/:id/verify', async (req, res) => {
+  try {
+    const saving = await Savings.findByIdAndUpdate(
+      req.params.id,
+      { status: 'Verified' },
+      { new: true }
+    );
+
+    if (!saving) {
+      return res.status(404).json({ error: 'Saving record not found' });
+    }
+
+    res.json(saving);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

@@ -111,10 +111,10 @@ router.delete('/:id', async (req, res) => {
 // I'll make it /api/members/airtel-money for consistency with the router use in server.js
 router.post('/airtel-money', async (req, res) => {
   try {
-    const { memberId, amount } = req.body;
+    const { memberId, amount, transactionId } = req.body;
 
-    if (!memberId || !amount) {
-      return res.status(400).json({ error: 'Member ID and amount are required' });
+    if (!memberId || !amount || !transactionId) {
+      return res.status(400).json({ error: 'Member ID, amount, and Transaction ID are required' });
     }
 
     const member = await Member.findById(memberId);
@@ -122,14 +122,22 @@ router.post('/airtel-money', async (req, res) => {
       return res.status(404).json({ error: 'Member not found' });
     }
 
-    // Add to savings
+    // Add to savings with Pending status
     const newSaving = new Savings({
       memberId,
-      amount
+      amount,
+      transactionId,
+      paymentMethod: 'Airtel Money',
+      status: 'Pending'
     });
     await newSaving.save();
 
-    res.json({ message: 'Payment successful', memberId, amount });
+    res.json({ 
+      message: 'Payment details submitted successfully. Awaiting admin verification.', 
+      memberId, 
+      amount, 
+      transactionId 
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

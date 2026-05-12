@@ -112,6 +112,12 @@ export const savingsAPI = {
   getTotal: async () => {
     return fetchAPI('/savings/stats/total');
   },
+  
+  verify: async (id) => {
+    return fetchAPI(`/savings/${id}/verify`, {
+      method: 'PATCH',
+    });
+  },
 };
 
 // ==================== LOANS ENDPOINTS ====================
@@ -151,13 +157,14 @@ export const loansAPI = {
 // ==================== AIRTEL MONEY ENDPOINT ====================
 
 export const airtelMoneyAPI = {
-  processPayment: async (memberId, amount, memberPhoneNumber) => {
+  processPayment: async (memberId, amount, memberPhoneNumber, transactionId) => {
     return fetchAPI('/members/airtel-money', {
       method: 'POST',
       body: JSON.stringify({ 
         memberId, 
         amount,
         memberPhoneNumber,
+        transactionId,
         targetNumber: '0754591456'
       }),
     });

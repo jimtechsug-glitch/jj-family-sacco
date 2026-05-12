@@ -16,6 +16,7 @@ const MemberDashboard = () => {
 
   const [showPayModal, setShowPayModal] = useState(false);
   const [payAmount, setPayAmount] = useState('');
+  const [transactionId, setTransactionId] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
 
   const personalSavings = getMemberPersonalSavings(user.id);
@@ -36,13 +37,18 @@ const MemberDashboard = () => {
   const handleAirtelPayment = async (e) => {
     e.preventDefault();
     if (!payAmount || Number(payAmount) <= 0) return;
+    if (!transactionId) {
+      alert('Please enter the Transaction ID from your Airtel Money message.');
+      return;
+    }
 
     setIsProcessing(true);
     try {
-      await processAirtelPayment(Number(payAmount));
-      alert('Airtel Money payment request sent successfully! Please check your phone to confirm.');
+      await processAirtelPayment(Number(payAmount), transactionId);
+      alert('Payment details submitted successfully! The admin will verify your transaction shortly.');
       setShowPayModal(false);
       setPayAmount('');
+      setTransactionId('');
     } catch (err) {
       alert('Failed to process Airtel payment: ' + err.message);
     } finally {
@@ -197,8 +203,19 @@ const MemberDashboard = () => {
                   autoFocus
                 />
               </div>
+              <div className="form-group" style={{ marginTop: '1rem' }}>
+                <label>Transaction ID (from Airtel message)</label>
+                <input 
+                  type="text" 
+                  className="form-control" 
+                  value={transactionId}
+                  onChange={(e) => setTransactionId(e.target.value)}
+                  required
+                  placeholder="e.g. MP230101.1234.H12345"
+                />
+              </div>
               <p style={{ fontSize: '0.85rem', color: 'var(--warning)', margin: '1rem 0' }}>
-                * A push notification will be sent to your registered Airtel number to confirm payment.
+                * Please send the money manually to the number above, then enter the ID from the confirmation message.
               </p>
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '2rem' }}>
                 <button type="button" className="btn" onClick={() => setShowPayModal(false)} disabled={isProcessing}>Cancel</button>

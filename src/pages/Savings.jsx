@@ -3,8 +3,9 @@ import { useSacco } from '../context/SaccoContext';
 import { Wallet, Plus } from 'lucide-react';
 
 const Savings = () => {
-  const { savings, members, getMemberName, addSaving } = useSacco();
+  const { savings, members, getMemberName, addSaving, verifySaving } = useSacco();
   const [showModal, setShowModal] = useState(false);
+  const [activeTab, setActiveTab] = useState('all'); // 'all' or 'pending'
   const [newSaving, setNewSaving] = useState({ memberId: '', amount: '' });
   const [isLoading, setIsLoading] = useState(false);
 
@@ -24,18 +25,60 @@ const Savings = () => {
     }
   };
 
-  const totalSavings = savings.reduce((acc, curr) => acc + Number(curr.amount), 0);
+  const handleVerify = async (id) => {
+    if (window.confirm('Are you sure you have verified this transaction on your phone?')) {
+      try {
+        await verifySaving(id);
+      } catch (err) {
+        alert('Verification failed: ' + err.message);
+      }
+    }
+  };
+
+  const filteredSavings = activeTab === 'pending' 
+    ? savings.filter(s => s.status === 'Pending')
+    : savings;
+
+  const totalSavings = savings
+    .filter(s => s.status === 'Verified')
+    .reduce((acc, curr) => acc + Number(curr.amount), 0);
+
+  const pendingCount = savings.filter(s => s.status === 'Pending').length;
 
   return (
     <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
       <div className="flex-between">
         <div>
           <h1>Savings & Deposits</h1>
-          <p className="text-muted">Total Sacco Savings: <strong className="text-success">UGX {totalSavings.toLocaleString()}</strong></p>
+          <p className="text-muted">Total Verified Savings: <strong className="text-success">UGX {totalSavings.toLocaleString()}</strong></p>
         </div>
         <button className="btn btn-primary" onClick={() => setShowModal(true)} disabled={isLoading}>
           <Plus size={18} />
           Record Deposit
+        </button>
+      </div>
+
+      <div style={{ display: 'flex', gap: '1rem', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.5rem' }}>
+        <button 
+          onClick={() => setActiveTab('all')}
+          style={{ 
+            background: 'none', border: 'none', color: activeTab === 'all' ? 'var(--primary)' : 'var(--text-secondary)',
+            fontWeight: activeTab === 'all' ? '700' : '500', cursor: 'pointer', padding: '0.5rem 1rem',
+            borderBottom: activeTab === 'all' ? '2px solid var(--primary)' : 'none'
+          }}
+        >
+          All Savings
+        </button>
+        <button 
+          onClick={() => setActiveTab('pending')}
+          style={{ 
+            background: 'none', border: 'none', color: activeTab === 'pending' ? 'var(--warning)' : 'var(--text-secondary)',
+            fontWeight: activeTab === 'pending' ? '700' : '500', cursor: 'pointer', padding: '0.5rem 1rem',
+            borderBottom: activeTab === 'pending' ? '2px solid var(--warning)' : 'none',
+            display: 'flex', alignItems: 'center', gap: '0.5rem'
+          }}
+        >
+          Pending Verification {pendingCount > 0 && <span style={{ background: 'var(--danger)', color: 'white', borderRadius: '50%', width: '20px', height: '20px', fontSize: '0.7rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{pendingCount}</span>}
         </button>
       </div>
 
@@ -44,26 +87,43 @@ const Savings = () => {
           <table>
             <thead>
               <tr>
-                <th>Transaction ID</th>
                 <th>Date</th>
                 <th>Member</th>
-                <th>Type</th>
                 <th>Amount</th>
+                <th>Method / ID</th>
+                <th>Status</th>
+                <th>Action</th>
               </tr>
             </thead>
             <tbody>
-              {savings.slice().reverse().map(saving => (
+              {filteredSavings.slice().reverse().map(saving => (
                 <tr key={saving.id}>
-                  <td className="text-muted">#{saving.id}</td>
                   <td>{saving.date}</td>
                   <td style={{ fontWeight: '500' }}>{getMemberName(saving.memberId)}</td>
-                  <td><span style={{ background: 'rgba(16, 185, 129, 0.2)', color: 'var(--success)', padding: '0.25rem 0.75rem', borderRadius: '999px', fontSize: '0.8rem' }}>{saving.type}</span></td>
-                  <td className="text-success">+ UGX {Number(saving.amount).toLocaleString()}</td>
+                  <td className="text-success" style={{ fontWeight: '600' }}>UGX {Number(saving.amount).toLocaleString()}</td>
+                  <td>
+                    <div style={{ fontSize: '0.85rem' }}>{saving.paymentMethod || 'Cash'}</div>
+                    {saving.transactionId && <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>{saving.transactionId}</div>}
+                  </td>
+                  <td>
+                    <span style={{ 
+                      background: saving.status === 'Verified' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(245, 158, 11, 0.2)', 
+                      color: saving.status === 'Verified' ? 'var(--success)' : 'var(--warning)', 
+                      padding: '0.25rem 0.75rem', borderRadius: '999px', fontSize: '0.8rem', fontWeight: '600'
+                    }}>
+                      {saving.status || 'Verified'}
+                    </span>
+                  </td>
+                  <td>
+                    {saving.status === 'Pending' && (
+                      <button className="btn btn-sm btn-success" onClick={() => handleVerify(saving.id)}>Verify</button>
+                    )}
+                  </td>
                 </tr>
               ))}
-              {savings.length === 0 && (
+              {filteredSavings.length === 0 && (
                 <tr>
-                  <td colSpan="5" style={{ textAlign: 'center', padding: '2rem' }}>No savings records found.</td>
+                  <td colSpan="6" style={{ textAlign: 'center', padding: '3rem' }}>No {activeTab === 'pending' ? 'pending' : ''} savings records found.</td>
                 </tr>
               )}
             </tbody>

@@ -124,10 +124,10 @@ export const SaccoProvider = ({ children }) => {
   };
 
   // Airtel Money operations
-  const processAirtelPayment = async (amount) => {
+  const processAirtelPayment = async (amount, transactionId) => {
     try {
       if (!user) throw new Error("User must be logged in");
-      const result = await api.airtelMoneyAPI.processPayment(user.id, amount, user.phoneNumber);
+      const result = await api.airtelMoneyAPI.processPayment(user.id, amount, user.phoneNumber, transactionId);
       console.log("✅ Airtel Money payment processed:", result);
       await refreshData();
       return result;
@@ -147,6 +147,19 @@ export const SaccoProvider = ({ children }) => {
       return newSaving;
     } catch (err) {
       console.error("❌ Failed to add saving:", err);
+      setError(err.message);
+      throw err;
+    }
+  };
+
+  const verifySaving = async (id) => {
+    try {
+      const updated = await api.savingsAPI.verify(id);
+      setSavings(savings.map(s => s.id === id ? updated : s));
+      console.log("✅ Saving verified");
+      return updated;
+    } catch (err) {
+      console.error("❌ Failed to verify saving:", err);
       setError(err.message);
       throw err;
     }
@@ -268,6 +281,7 @@ export const SaccoProvider = ({ children }) => {
       editMember,
       removeMember,
       addSaving,
+      verifySaving,
       addLoan,
       recordLoanRepayment,
       processAirtelPayment,
