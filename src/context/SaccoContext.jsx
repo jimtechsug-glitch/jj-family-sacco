@@ -272,7 +272,7 @@ export const SaccoProvider = ({ children }) => {
   };
 
   const getMemberActiveLoan = (memberId) => {
-    return loans.find(l => l.memberId === memberId && l.status === 'Active');
+    return loans.find(l => l.memberId === memberId && (l.status === 'Active' || l.status === 'Pending'));
   };
 
   const getMemberLoanEligibility = (memberId) => {
