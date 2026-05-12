@@ -5,6 +5,13 @@ import Loan from '../models/Loan.js';
 
 const router = express.Router();
 
+// Helper function to generate credentials
+const generateCredentials = (name) => {
+  const username = name.split(' ').join('').toLowerCase() + Math.floor(Math.random() * 1000);
+  const password = Math.random().toString(36).slice(-8);
+  return { username, password };
+};
+
 // GET /api/members - Get all members
 router.get('/', async (req, res) => {
   try {
@@ -12,6 +19,8 @@ router.get('/', async (req, res) => {
     res.json(members.map(m => ({
       id: m._id,
       name: m.name,
+      username: m.username,
+      password: m.password,
       role: m.role,
       phoneNumber: m.phoneNumber,
       joinedAt: m.joinedDate.toISOString().split('T')[0]
@@ -30,11 +39,14 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: 'Member name required' });
     }
 
+    const { username, password } = generateCredentials(name);
+
     const newMember = new Member({
       name,
+      username,
+      password,
       role,
-      phoneNumber,
-      password: '1234' // Default password
+      phoneNumber
     });
 
     await newMember.save();
@@ -42,6 +54,8 @@ router.post('/', async (req, res) => {
     res.status(201).json({
       id: newMember._id,
       name: newMember.name,
+      username: newMember.username,
+      password: newMember.password,
       role: newMember.role,
       phoneNumber: newMember.phoneNumber,
       joinedAt: newMember.joinedDate.toISOString().split('T')[0]
@@ -67,6 +81,8 @@ router.put('/:id', async (req, res) => {
     res.json({
       id: updatedMember._id,
       name: updatedMember.name,
+      username: updatedMember.username,
+      password: updatedMember.password,
       role: updatedMember.role,
       phoneNumber: updatedMember.phoneNumber,
       joinedAt: updatedMember.joinedDate.toISOString().split('T')[0]
