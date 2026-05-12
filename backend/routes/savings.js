@@ -50,7 +50,9 @@ router.post('/', async (req, res) => {
 
     const newSaving = new Savings({
       memberId,
-      amount: Number(amount)
+      amount: Number(amount),
+      paymentMethod: 'Cash',
+      status: 'Verified'
     });
 
     await newSaving.save();
