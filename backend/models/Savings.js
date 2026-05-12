@@ -5,7 +5,7 @@ const savingsSchema = new mongoose.Schema({
   amount: { type: Number, required: true },
   transactionId: { type: String, default: '' },
   paymentMethod: { type: String, default: 'Cash' },
-  status: { type: String, enum: ['Pending', 'Verified'], default: 'Verified' },
+  status: { type: String, enum: ['Pending', 'Verified'], default: 'Pending' },
   date: { type: Date, default: Date.now }
 });
 

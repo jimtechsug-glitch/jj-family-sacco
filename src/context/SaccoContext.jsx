@@ -234,13 +234,15 @@ export const SaccoProvider = ({ children }) => {
   const isValidMember = (memberId) => members.some(m => m.id === memberId);
   const getMemberName = (id) => members.find(m => m.id === id)?.name || 'Unknown';
 
-  const getTotalSavings = () => savings.reduce((acc, s) => acc + Number(s.amount), 0);
+  const getTotalSavings = () => savings.filter(s => s.status === 'Verified').reduce((acc, s) => acc + Number(s.amount), 0);
   const getTotalLoansIssued = () => loans.reduce((acc, l) => acc + Number(l.principal), 0);
   const getTotalLoanRepayments = () => loans.reduce((acc, l) => acc + Number(l.amountPaid), 0);
   const getAvailableCash = () => getTotalSavings() + getTotalLoanRepayments() - getTotalLoansIssued();
 
   const getMemberPersonalSavings = (memberId) => {
-    return savings.filter(s => s.memberId === memberId).reduce((acc, curr) => acc + Number(curr.amount), 0);
+    return savings
+      .filter(s => s.memberId === memberId && s.status === 'Verified')
+      .reduce((acc, curr) => acc + Number(curr.amount), 0);
   };
 
   const getMemberActiveLoan = (memberId) => {
