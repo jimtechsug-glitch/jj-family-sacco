@@ -1,5 +1,5 @@
 // API Service - All backend communication
-const API_BASE = 'http://localhost:5000/api';
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 // Store token in sessionStorage (cleared on browser close)
 const TOKEN_KEY = 'sacco_token';
