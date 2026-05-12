@@ -12,6 +12,9 @@ router.get('/', async (req, res) => {
       id: s._id,
       memberId: s.memberId,
       amount: s.amount,
+      status: s.status,
+      paymentMethod: s.paymentMethod,
+      transactionId: s.transactionId,
       date: s.date.toISOString().split('T')[0]
     })));
   } catch (error) {
@@ -27,6 +30,9 @@ router.get('/member/:memberId', async (req, res) => {
       id: s._id,
       memberId: s.memberId,
       amount: s.amount,
+      status: s.status,
+      paymentMethod: s.paymentMethod,
+      transactionId: s.transactionId,
       date: s.date.toISOString().split('T')[0]
     })));
   } catch (error) {
@@ -61,6 +67,9 @@ router.post('/', async (req, res) => {
       id: newSaving._id,
       memberId: newSaving.memberId,
       amount: newSaving.amount,
+      status: newSaving.status,
+      paymentMethod: newSaving.paymentMethod,
+      transactionId: newSaving.transactionId,
       date: newSaving.date.toISOString().split('T')[0]
     });
   } catch (error) {
