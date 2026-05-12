@@ -20,7 +20,7 @@ const Dashboard = () => {
   const availableCash = getAvailableCash();
 
   const recentTransactions = [
-    ...savings.filter(s => members.some(m => m.id === s.memberId)).map(s => ({ ...s, txType: 'Deposit', amount: Number(s.amount) })),
+    ...savings.filter(s => s.status === 'Verified' && members.some(m => m.id === s.memberId)).map(s => ({ ...s, txType: 'Deposit', amount: Number(s.amount) })),
     ...loans.filter(l => members.some(m => m.id === l.memberId)).map(l => ({ ...l, txType: 'Loan Issued', amount: Number(l.principal), date: l.dateIssued })),
   ].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 5);
 

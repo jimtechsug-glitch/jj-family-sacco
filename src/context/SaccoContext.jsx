@@ -85,7 +85,7 @@ export const SaccoProvider = ({ children }) => {
   const addMember = async (memberData) => {
     try {
       const newMember = await api.membersAPI.create(memberData.name, memberData.role, memberData.phoneNumber);
-      setMembers([...members, newMember]);
+      await refreshData();
       console.log("✅ Member added:", newMember.name);
       return newMember;
     } catch (err) {
@@ -98,7 +98,7 @@ export const SaccoProvider = ({ children }) => {
   const editMember = async (updatedMember) => {
     try {
       const result = await api.membersAPI.update(updatedMember.id, updatedMember);
-      setMembers(members.map(m => m.id === updatedMember.id ? result : m));
+      await refreshData();
       console.log("✅ Member updated:", updatedMember.name);
       return result;
     } catch (err) {
@@ -142,7 +142,7 @@ export const SaccoProvider = ({ children }) => {
   const addSaving = async (savingData) => {
     try {
       const newSaving = await api.savingsAPI.create(savingData.memberId, savingData.amount);
-      setSavings([...savings, newSaving]);
+      await refreshData();
       console.log("✅ Saving recorded:", newSaving.amount);
       return newSaving;
     } catch (err) {
@@ -155,7 +155,7 @@ export const SaccoProvider = ({ children }) => {
   const verifySaving = async (id) => {
     try {
       const updated = await api.savingsAPI.verify(id);
-      setSavings(savings.map(s => s.id === id ? updated : s));
+      await refreshData();
       console.log("✅ Saving verified");
       return updated;
     } catch (err) {
@@ -174,7 +174,7 @@ export const SaccoProvider = ({ children }) => {
         loanData.interestRate,
         loanData.repaymentMonths
       );
-      setLoans([...loans, newLoan]);
+      await refreshData();
       console.log("✅ Loan created:", newLoan.principal);
       return newLoan;
     } catch (err) {
@@ -187,7 +187,7 @@ export const SaccoProvider = ({ children }) => {
   const recordLoanRepayment = async (loanId, amount) => {
     try {
       const updatedLoan = await api.loansAPI.recordRepayment(loanId, amount);
-      setLoans(loans.map(l => l.id === loanId ? updatedLoan : l));
+      await refreshData();
       console.log("✅ Loan repayment recorded:", amount);
       return updatedLoan;
     } catch (err) {
