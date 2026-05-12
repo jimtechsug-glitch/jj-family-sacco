@@ -1,14 +1,19 @@
 import express from 'express';
-import { v4 as uuidv4 } from 'uuid';
-import { getDatabase, updateDatabase } from '../db/database.js';
+import Savings from '../models/Savings.js';
+import Member from '../models/Member.js';
 
 const router = express.Router();
 
 // GET /api/savings - Get all savings records
 router.get('/', async (req, res) => {
   try {
-    const db = await getDatabase();
-    res.json(db.savings);
+    const savings = await Savings.find();
+    res.json(savings.map(s => ({
+      id: s._id,
+      memberId: s.memberId,
+      amount: s.amount,
+      date: s.date.toISOString().split('T')[0]
+    })));
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -17,9 +22,13 @@ router.get('/', async (req, res) => {
 // GET /api/savings/member/:memberId - Get savings for a specific member
 router.get('/member/:memberId', async (req, res) => {
   try {
-    const db = await getDatabase();
-    const memberSavings = db.savings.filter(s => s.memberId === req.params.memberId);
-    res.json(memberSavings);
+    const savings = await Savings.find({ memberId: req.params.memberId });
+    res.json(savings.map(s => ({
+      id: s._id,
+      memberId: s.memberId,
+      amount: s.amount,
+      date: s.date.toISOString().split('T')[0]
+    })));
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -34,24 +43,24 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: 'Member ID and amount required' });
     }
 
-    const db = await getDatabase();
-    const member = db.members.find(m => m.id === memberId);
-
+    const member = await Member.findById(memberId);
     if (!member) {
       return res.status(404).json({ error: 'Member not found' });
     }
 
-    const newSaving = {
-      id: uuidv4(),
+    const newSaving = new Savings({
       memberId,
-      amount: Number(amount),
-      date: new Date().toISOString().split('T')[0]
-    };
+      amount: Number(amount)
+    });
 
-    db.savings.push(newSaving);
-    await updateDatabase(db);
+    await newSaving.save();
 
-    res.status(201).json(newSaving);
+    res.status(201).json({
+      id: newSaving._id,
+      memberId: newSaving.memberId,
+      amount: newSaving.amount,
+      date: newSaving.date.toISOString().split('T')[0]
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -60,8 +69,10 @@ router.post('/', async (req, res) => {
 // GET /api/savings/stats/total - Get total savings
 router.get('/stats/total', async (req, res) => {
   try {
-    const db = await getDatabase();
-    const total = db.savings.reduce((acc, s) => acc + Number(s.amount), 0);
+    const result = await Savings.aggregate([
+      { $group: { _id: null, total: { $sum: "$amount" } } }
+    ]);
+    const total = result.length > 0 ? result[0].total : 0;
     res.json({ total });
   } catch (error) {
     res.status(500).json({ error: error.message });

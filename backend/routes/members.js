@@ -1,21 +1,21 @@
 import express from 'express';
-import { v4 as uuidv4 } from 'uuid';
-import { getDatabase, updateDatabase } from '../db/database.js';
+import Member from '../models/Member.js';
+import Savings from '../models/Savings.js';
+import Loan from '../models/Loan.js';
 
 const router = express.Router();
-
-// Helper function to generate credentials
-const generateCredentials = (name) => {
-  const username = name.split(' ').join('').toLowerCase() + Math.floor(Math.random() * 1000);
-  const password = Math.random().toString(36).slice(-8);
-  return { username, password };
-};
 
 // GET /api/members - Get all members
 router.get('/', async (req, res) => {
   try {
-    const db = await getDatabase();
-    res.json(db.members);
+    const members = await Member.find();
+    res.json(members.map(m => ({
+      id: m._id,
+      name: m.name,
+      role: m.role,
+      phoneNumber: m.phoneNumber,
+      joinedAt: m.joinedDate.toISOString().split('T')[0]
+    })));
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -24,44 +24,28 @@ router.get('/', async (req, res) => {
 // POST /api/members - Add new member
 router.post('/', async (req, res) => {
   try {
-    const { name, role = 'Member' } = req.body;
+    const { name, role = 'Member', phoneNumber = '' } = req.body;
 
     if (!name) {
       return res.status(400).json({ error: 'Member name required' });
     }
 
-    const db = await getDatabase();
-    const { username, password } = generateCredentials(name);
-
-    const newMember = {
-      id: uuidv4(),
+    const newMember = new Member({
       name,
       role,
-      username,
-      password,
-      joinedAt: new Date().toISOString().split('T')[0]
-    };
+      phoneNumber,
+      password: '1234' // Default password
+    });
 
-    db.members.push(newMember);
-    await updateDatabase(db);
+    await newMember.save();
 
-    res.status(201).json(newMember);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// GET /api/members/:id - Get member by ID
-router.get('/:id', async (req, res) => {
-  try {
-    const db = await getDatabase();
-    const member = db.members.find(m => m.id === req.params.id);
-
-    if (!member) {
-      return res.status(404).json({ error: 'Member not found' });
-    }
-
-    res.json(member);
+    res.status(201).json({
+      id: newMember._id,
+      name: newMember.name,
+      role: newMember.role,
+      phoneNumber: newMember.phoneNumber,
+      joinedAt: newMember.joinedDate.toISOString().split('T')[0]
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -70,18 +54,23 @@ router.get('/:id', async (req, res) => {
 // PUT /api/members/:id - Update member
 router.put('/:id', async (req, res) => {
   try {
-    const db = await getDatabase();
-    const memberIndex = db.members.findIndex(m => m.id === req.params.id);
+    const updatedMember = await Member.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true }
+    );
 
-    if (memberIndex === -1) {
+    if (!updatedMember) {
       return res.status(404).json({ error: 'Member not found' });
     }
 
-    const updated = { ...db.members[memberIndex], ...req.body, id: db.members[memberIndex].id };
-    db.members[memberIndex] = updated;
-    await updateDatabase(db);
-
-    res.json(updated);
+    res.json({
+      id: updatedMember._id,
+      name: updatedMember.name,
+      role: updatedMember.role,
+      phoneNumber: updatedMember.phoneNumber,
+      joinedAt: updatedMember.joinedDate.toISOString().split('T')[0]
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -90,21 +79,20 @@ router.put('/:id', async (req, res) => {
 // DELETE /api/members/:id - Delete member
 router.delete('/:id', async (req, res) => {
   try {
-    const db = await getDatabase();
+    const memberId = req.params.id;
+    await Member.findByIdAndDelete(memberId);
+    await Savings.deleteMany({ memberId });
+    await Loan.deleteMany({ memberId });
 
-    db.members = db.members.filter(m => m.id !== req.params.id);
-    db.savings = db.savings.filter(s => s.memberId !== req.params.id);
-    db.loans = db.loans.filter(l => l.memberId !== req.params.id);
-
-    await updateDatabase(db);
-
-    res.json({ message: 'Member deleted successfully' });
+    res.json({ message: 'Member and related data deleted successfully' });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
-// POST /api/airtel-money - Process Airtel Money payment
+// POST /api/members/airtel-money - Process Airtel Money payment
+// Note: In App.jsx this was pointed to /api/members/airtel-money or /api/airtel-money
+// I'll make it /api/members/airtel-money for consistency with the router use in server.js
 router.post('/airtel-money', async (req, res) => {
   try {
     const { memberId, amount } = req.body;
@@ -113,29 +101,17 @@ router.post('/airtel-money', async (req, res) => {
       return res.status(400).json({ error: 'Member ID and amount are required' });
     }
 
-    const db = await getDatabase();
-    const member = db.members.find(m => m.id === memberId);
-
+    const member = await Member.findById(memberId);
     if (!member) {
       return res.status(404).json({ error: 'Member not found' });
     }
 
-    // Simulate Airtel Money payment processing
-    const paymentSuccess = true; // Replace with actual Airtel Money API integration
-
-    if (!paymentSuccess) {
-      return res.status(500).json({ error: 'Payment processing failed' });
-    }
-
-    // Add the payment to the member's savings
-    db.savings.push({
-      id: uuidv4(),
+    // Add to savings
+    const newSaving = new Savings({
       memberId,
-      amount,
-      date: new Date().toISOString()
+      amount
     });
-
-    await updateDatabase(db);
+    await newSaving.save();
 
     res.json({ message: 'Payment successful', memberId, amount });
   } catch (error) {

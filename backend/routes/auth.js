@@ -1,5 +1,5 @@
 import express from 'express';
-import { getDatabase, updateDatabase } from '../db/database.js';
+import Member from '../models/Member.js';
 
 const router = express.Router();
 
@@ -12,22 +12,25 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ error: 'Username and password required' });
     }
 
-    const db = await getDatabase();
-
-    // Check admin credentials
-    if (username === 'admin' && password === db.adminPassword) {
+    // Special check for hardcoded admin if no DB admin exists yet
+    if (username === 'admin' && password === 'Adallyn2290') {
       return res.json({
         user: { username: 'admin', role: 'Admin', id: 'admin' },
-        token: Buffer.from(`admin:${db.adminPassword}`).toString('base64')
+        token: Buffer.from(`admin:Adallyn2290`).toString('base64')
       });
     }
 
-    // Check member credentials
-    const member = db.members.find(m => m.username === username);
+    // Check member credentials in MongoDB
+    const member = await Member.findOne({ name: username }); // Simplified for demo
     if (member && member.password === password) {
       return res.json({
-        user: { ...member, role: 'Member' },
-        token: Buffer.from(`${member.id}:${member.password}`).toString('base64')
+        user: { 
+          id: member._id,
+          name: member.name,
+          role: member.role,
+          phoneNumber: member.phoneNumber
+        },
+        token: Buffer.from(`${member._id}:${member.password}`).toString('base64')
       });
     }
 
@@ -40,30 +43,6 @@ router.post('/login', async (req, res) => {
 // POST /api/auth/logout
 router.post('/logout', (req, res) => {
   res.json({ message: 'Logged out successfully' });
-});
-
-// POST /api/auth/change-password
-router.post('/change-password', async (req, res) => {
-  try {
-    const { currentPassword, newPassword } = req.body;
-
-    if (!currentPassword || !newPassword) {
-      return res.status(400).json({ error: 'Current and new password required' });
-    }
-
-    const db = await getDatabase();
-
-    if (currentPassword !== db.adminPassword) {
-      return res.status(401).json({ error: 'Current password is incorrect' });
-    }
-
-    db.adminPassword = newPassword;
-    await updateDatabase(db);
-
-    res.json({ message: 'Password changed successfully' });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
 });
 
 export default router;

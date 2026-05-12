@@ -1,14 +1,23 @@
 import express from 'express';
-import { v4 as uuidv4 } from 'uuid';
-import { getDatabase, updateDatabase } from '../db/database.js';
+import Loan from '../models/Loan.js';
+import Member from '../models/Member.js';
 
 const router = express.Router();
 
 // GET /api/loans - Get all loans
 router.get('/', async (req, res) => {
   try {
-    const db = await getDatabase();
-    res.json(db.loans);
+    const loans = await Loan.find();
+    res.json(loans.map(l => ({
+      id: l._id,
+      memberId: l.memberId,
+      principal: l.principal,
+      interestRate: l.interestRate,
+      repaymentMonths: l.repaymentMonths,
+      amountPaid: l.repayments.reduce((acc, r) => acc + r.amount, 0),
+      status: l.status,
+      dateIssued: l.date.toISOString().split('T')[0]
+    })));
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -17,9 +26,17 @@ router.get('/', async (req, res) => {
 // GET /api/loans/member/:memberId - Get loans for a specific member
 router.get('/member/:memberId', async (req, res) => {
   try {
-    const db = await getDatabase();
-    const memberLoans = db.loans.filter(l => l.memberId === req.params.memberId);
-    res.json(memberLoans);
+    const loans = await Loan.find({ memberId: req.params.memberId });
+    res.json(loans.map(l => ({
+      id: l._id,
+      memberId: l.memberId,
+      principal: l.principal,
+      interestRate: l.interestRate,
+      repaymentMonths: l.repaymentMonths,
+      amountPaid: l.repayments.reduce((acc, r) => acc + r.amount, 0),
+      status: l.status,
+      dateIssued: l.date.toISOString().split('T')[0]
+    })));
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -34,34 +51,36 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: 'Missing required loan fields' });
     }
 
-    const db = await getDatabase();
-    const member = db.members.find(m => m.id === memberId);
-
+    const member = await Member.findById(memberId);
     if (!member) {
       return res.status(404).json({ error: 'Member not found' });
     }
 
     // Check if member has active loan
-    const activeLoan = db.loans.find(l => l.memberId === memberId && l.status === 'Active');
+    const activeLoan = await Loan.findOne({ memberId, status: 'Active' });
     if (activeLoan) {
       return res.status(400).json({ error: 'Member already has an active loan' });
     }
 
-    const newLoan = {
-      id: uuidv4(),
+    const newLoan = new Loan({
       memberId,
       principal: Number(principal),
       interestRate: Number(interestRate),
-      repaymentMonths: Number(repaymentMonths),
+      repaymentMonths: Number(repaymentMonths)
+    });
+
+    await newLoan.save();
+
+    res.status(201).json({
+      id: newLoan._id,
+      memberId: newLoan.memberId,
+      principal: newLoan.principal,
+      interestRate: newLoan.interestRate,
+      repaymentMonths: newLoan.repaymentMonths,
       amountPaid: 0,
-      status: 'Active',
-      dateIssued: new Date().toISOString().split('T')[0]
-    };
-
-    db.loans.push(newLoan);
-    await updateDatabase(db);
-
-    res.status(201).json(newLoan);
+      status: newLoan.status,
+      dateIssued: newLoan.date.toISOString().split('T')[0]
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -76,43 +95,58 @@ router.post('/:loanId/repayment', async (req, res) => {
       return res.status(400).json({ error: 'Repayment amount required' });
     }
 
-    const db = await getDatabase();
-    const loan = db.loans.find(l => l.id === req.params.loanId);
-
+    const loan = await Loan.findById(req.params.loanId);
     if (!loan) {
       return res.status(404).json({ error: 'Loan not found' });
     }
 
-    const newPaid = loan.amountPaid + Number(amount);
+    loan.repayments.push({ amount: Number(amount) });
+    
+    const amountPaid = loan.repayments.reduce((acc, r) => acc + r.amount, 0);
     const totalDue = loan.principal + (loan.principal * loan.interestRate / 100);
 
-    loan.amountPaid = newPaid;
-    loan.status = newPaid >= totalDue ? 'Cleared' : 'Active';
+    if (amountPaid >= totalDue) {
+      loan.status = 'Paid';
+    }
 
-    await updateDatabase(db);
+    await loan.save();
 
-    res.json(loan);
+    res.json({
+      id: loan._id,
+      memberId: loan.memberId,
+      principal: loan.principal,
+      interestRate: loan.interestRate,
+      repaymentMonths: loan.repaymentMonths,
+      amountPaid: amountPaid,
+      status: loan.status,
+      dateIssued: loan.date.toISOString().split('T')[0]
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
-// GET /api/loans/stats/total - Get total loans issued
+// GET /api/loans/stats/total-issued - Get total loans issued
 router.get('/stats/total-issued', async (req, res) => {
   try {
-    const db = await getDatabase();
-    const total = db.loans.reduce((acc, l) => acc + Number(l.principal), 0);
+    const result = await Loan.aggregate([
+      { $group: { _id: null, total: { $sum: "$principal" } } }
+    ]);
+    const total = result.length > 0 ? result[0].total : 0;
     res.json({ total });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
-// GET /api/loans/stats/repayments - Get total repayments
+// GET /api/loans/stats/total-repayments - Get total repayments
 router.get('/stats/total-repayments', async (req, res) => {
   try {
-    const db = await getDatabase();
-    const total = db.loans.reduce((acc, l) => acc + Number(l.amountPaid), 0);
+    const result = await Loan.aggregate([
+      { $unwind: "$repayments" },
+      { $group: { _id: null, total: { $sum: "$repayments.amount" } } }
+    ]);
+    const total = result.length > 0 ? result[0].total : 0;
     res.json({ total });
   } catch (error) {
     res.status(500).json({ error: error.message });

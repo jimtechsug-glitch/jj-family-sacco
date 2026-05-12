@@ -8,4 +8,6 @@ services:
     envVars:
       - key: NODE_VERSION
         value: 20
+      - key: MONGODB_URI
+        sync: false # User will provide this in Render dashboard
     plan: free
