@@ -2,7 +2,7 @@ import React from 'react';
 import { useSacco } from '../context/SaccoContext';
 import { FileText, Download, Wallet, Landmark, Eye } from 'lucide-react';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 
 const Reports = () => {
   const { 
@@ -40,7 +40,7 @@ const Reports = () => {
     const doc = new jsPDF();
     generatePDFHeader(doc, 'Monthly Financial Report');
 
-    doc.autoTable({
+    autoTable(doc, {
       startY: 50,
       head: [['Category', 'Amount (UGX)']],
       body: [
@@ -83,7 +83,7 @@ const Reports = () => {
         `UGX ${Number(s.amount).toLocaleString()}`
       ]);
 
-    doc.autoTable({
+    autoTable(doc, {
       startY: 50,
       head: [['Date', 'Member Name', 'Method', 'Amount']],
       body: tableData,
@@ -116,7 +116,7 @@ const Reports = () => {
         ];
       });
 
-    doc.autoTable({
+    autoTable(doc, {
       startY: 50,
       head: [['Date Issued', 'Member Name', 'Principal', 'Interest', 'Balance Due', 'Status']],
       body: tableData,
