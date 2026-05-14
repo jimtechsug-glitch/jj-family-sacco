@@ -1,5 +1,8 @@
 {
   "appId": "com.jjfamily.sacco",
   "appName": "JJ Family Sacco",
-  "webDir": "dist"
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https"
+  }
 }
