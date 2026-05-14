@@ -138,6 +138,7 @@ const Sidebar = () => {
             <span>{item.name}</span>
           </NavLink>
         ))}
+      </nav>
 
       <div className={classes.footer}>
         {user?.role === 'Member' && (
