@@ -130,3 +130,5 @@ The production build will be output to the `dist/` directory.
 ## 📝 License
 
 This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
+---
+*Deployment sync: 2026-05-14*
