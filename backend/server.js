@@ -20,7 +20,8 @@ app.use(cors({
     'http://localhost:5173',
     'https://jimtechsug-glitch.github.io',
     'capacitor://localhost',
-    'http://localhost'
+    'http://localhost',
+    'https://localhost'
   ],
   credentials: true
 }));
