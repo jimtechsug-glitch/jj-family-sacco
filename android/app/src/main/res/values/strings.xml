@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">JJ Family Sacco</string>
+    <string name="title_activity_main">JJ Family Sacco</string>
+    <string name="package_name">com.jjfamily.sacco</string>
+    <string name="custom_url_scheme">com.jjfamily.sacco</string>
+</resources>
