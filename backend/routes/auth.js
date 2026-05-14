@@ -45,9 +45,44 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// POST /api/auth/logout
-router.post('/logout', (req, res) => {
-  res.json({ message: 'Logged out successfully' });
+// POST /api/auth/change-password
+router.post('/change-password', async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    const token = authHeader.split(' ')[1];
+    const decoded = Buffer.from(token, 'base64').toString('utf-8');
+    const [userId, storedPassword] = decoded.split(':');
+
+    if (userId === 'admin') {
+      // For hardcoded admin
+      if (currentPassword !== 'Adallyn2290') {
+        return res.status(401).json({ error: 'Invalid current password' });
+      }
+      return res.json({ message: 'Password change not allowed for hardcoded admin via API' });
+    }
+
+    const member = await Member.findById(userId);
+    if (!member) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    if (member.password !== currentPassword) {
+      return res.status(401).json({ error: 'Invalid current password' });
+    }
+
+    member.password = newPassword;
+    await member.save();
+
+    res.json({ message: 'Password updated successfully' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 export default router;

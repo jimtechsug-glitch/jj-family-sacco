@@ -9,15 +9,16 @@ const Sidebar = () => {
   const { 
     user, 
     logout, 
-    changeAdminPassword,
+    changePassword,
     getMemberLoanEligibility,
     getMemberActiveLoan,
     processAirtelPayment,
     addLoan
   } = useSacco();
   
-  const [showSettings, setShowSettings] = useState(false);
-  const [newPassword, setNewPassword] = useState('');
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [passwordData, setPasswordData] = useState({ current: '', new: '', confirm: '' });
+  const [passwordError, setPasswordError] = useState('');
   
   // Member actions state
   const [showPayModal, setShowPayModal] = useState(false);
@@ -80,6 +81,33 @@ const Sidebar = () => {
     }
   };
 
+  const handlePasswordChange = async (e) => {
+    e.preventDefault();
+    setPasswordError('');
+
+    if (passwordData.new !== passwordData.confirm) {
+      setPasswordError('New passwords do not match');
+      return;
+    }
+
+    if (passwordData.new.length < 4) {
+      setPasswordError('Password must be at least 4 characters');
+      return;
+    }
+
+    setIsProcessing(true);
+    try {
+      await changePassword(passwordData.current, passwordData.new);
+      setShowPasswordModal(false);
+      setPasswordData({ current: '', new: '', confirm: '' });
+      alert('Password changed successfully!');
+    } catch (err) {
+      setPasswordError(err.message);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   const navItems = user?.role === 'Admin' ? [
     { path: '/', name: 'Dashboard', icon: <LayoutDashboard size={20} /> },
     { path: '/members', name: 'Members', icon: <Users size={20} /> },
@@ -111,9 +139,9 @@ const Sidebar = () => {
           </NavLink>
         ))}
 
+      <div className={classes.footer}>
         {user?.role === 'Member' && (
-          <div style={{ marginTop: '2rem', padding: '0 1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-            <p style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--text-secondary)', fontWeight: '700', marginBottom: '0.25rem' }}>Quick Actions</p>
+          <div style={{ marginBottom: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
             <button 
               className="btn" 
               style={{ 
@@ -124,7 +152,8 @@ const Sidebar = () => {
                 gap: '0.5rem',
                 fontWeight: '600',
                 fontSize: '0.9rem',
-                justifyContent: 'center'
+                justifyContent: 'center',
+                width: '100%'
               }} 
               onClick={() => setShowPayModal(true)}
             >
@@ -133,7 +162,7 @@ const Sidebar = () => {
             </button>
             <button 
               className="btn btn-secondary" 
-              style={{ fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center' }}
+              style={{ fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center', width: '100%' }}
               onClick={() => setShowLoanModal(true)}
               disabled={activeLoan || loanEligibility === 0}
               title={activeLoan ? "You already have an active or pending loan" : (loanEligibility === 0 ? "You need verified savings to be eligible" : "")}
@@ -143,21 +172,17 @@ const Sidebar = () => {
             </button>
           </div>
         )}
-      </nav>
 
-      <div className={classes.footer}>
-        <p style={{ marginBottom: '1rem' }}>Logged in as {user?.username}</p>
+        <p style={{ marginBottom: '1rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Logged in as {user?.username}</p>
         
-        {user?.role === 'Admin' && (
-          <button 
-            className="btn" 
-            style={{ width: '100%', marginBottom: '0.5rem', background: 'rgba(255,255,255,0.1)', color: 'var(--text-primary)' }} 
-            onClick={() => setShowSettings(true)}
-          >
-            <Settings size={18} />
-            Settings
-          </button>
-        )}
+        <button 
+          className="btn" 
+          style={{ width: '100%', marginBottom: '0.5rem', background: 'rgba(255,255,255,0.1)', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center' }} 
+          onClick={() => setShowPasswordModal(true)}
+        >
+          <Settings size={18} />
+          Change Password
+        </button>
 
         <button className="btn btn-danger" onClick={logout} style={{ width: '100%' }}>
           <LogOut size={18} />
@@ -238,33 +263,61 @@ const Sidebar = () => {
         </div>
       )}
 
-      {showSettings && (
+      {showPasswordModal && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, backdropFilter: 'blur(4px)', padding: '1rem' }}>
-          <div className="glass-panel" style={{ width: '100%', maxWidth: '400px', padding: '2rem' }}>
-            <h2>Change Admin Password</h2>
-            <form onSubmit={(e) => {
-              e.preventDefault();
-              if (newPassword.trim()) {
-                changeAdminPassword(newPassword.trim());
-                setNewPassword('');
-                setShowSettings(false);
-                alert("Admin password updated successfully!");
-              }
-            }}>
+          <div className="glass-panel" style={{ width: '100%', maxWidth: '400px', padding: '2.5rem' }}>
+            <h2 style={{ marginBottom: '1.5rem' }}>Change Password</h2>
+            
+            <form onSubmit={handlePasswordChange}>
               <div className="form-group" style={{ textAlign: 'left' }}>
-                <label>New Password</label>
-                <input 
-                  type="text" 
-                  className="form-control" 
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="Enter new password"
+                <label>Current Password</label>
+                <input
+                  type="password"
+                  className="form-control"
+                  value={passwordData.current}
+                  onChange={(e) => setPasswordData({ ...passwordData, current: e.target.value })}
                   required
+                  style={{ width: '100%' }}
                 />
               </div>
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '2rem', flexWrap: 'wrap' }}>
-                <button type="button" className="btn" onClick={() => setShowSettings(false)}>Cancel</button>
-                <button type="submit" className="btn btn-primary">Save</button>
+
+              <div className="form-group" style={{ textAlign: 'left', marginTop: '1rem' }}>
+                <label>New Password</label>
+                <input
+                  type="password"
+                  className="form-control"
+                  value={passwordData.new}
+                  onChange={(e) => setPasswordData({ ...passwordData, new: e.target.value })}
+                  required
+                  style={{ width: '100%' }}
+                />
+              </div>
+
+              <div className="form-group" style={{ textAlign: 'left', marginTop: '1rem' }}>
+                <label>Confirm New Password</label>
+                <input
+                  type="password"
+                  className="form-control"
+                  value={passwordData.confirm}
+                  onChange={(e) => setPasswordData({ ...passwordData, confirm: e.target.value })}
+                  required
+                  style={{ width: '100%' }}
+                />
+              </div>
+
+              {passwordError && (
+                <div style={{ color: 'var(--danger)', fontSize: '0.85rem', marginTop: '0.75rem' }}>
+                  {passwordError}
+                </div>
+              )}
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '2.5rem' }}>
+                <button type="button" className="btn" onClick={() => { setShowPasswordModal(false); setPasswordError(''); }} disabled={isProcessing}>
+                  Cancel
+                </button>
+                <button type="submit" className="btn btn-primary" disabled={isProcessing}>
+                  {isProcessing ? 'Updating...' : 'Update Password'}
+                </button>
               </div>
             </form>
           </div>

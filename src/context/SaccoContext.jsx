@@ -223,13 +223,13 @@ export const SaccoProvider = ({ children }) => {
     }
   };
 
-  const changeAdminPassword = async (newPassword) => {
+  const changePassword = async (currentPassword, newPassword) => {
     try {
-      // Note: API requires both current and new password
-      // For now, we'll need to pass the current password
-      console.warn("⚠️  changeAdminPassword requires current password via API");
-      throw new Error("Use API directly for password changes");
+      const result = await api.authAPI.changePassword(currentPassword, newPassword);
+      console.log("✅ Password changed successfully");
+      return result;
     } catch (err) {
+      console.error("❌ Failed to change password:", err);
       setError(err.message);
       throw err;
     }
@@ -300,7 +300,7 @@ export const SaccoProvider = ({ children }) => {
       user,
       login,
       logout,
-      changeAdminPassword,
+      changePassword,
       resetAllData,
       members,
       savings,

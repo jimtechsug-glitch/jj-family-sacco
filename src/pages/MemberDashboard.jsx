@@ -13,28 +13,25 @@ const MemberDashboard = () => {
     getMemberRecentSavings,
     processAirtelPayment
   } = useSacco();
-
+ 
   const [isProcessing, setIsProcessing] = useState(false);
-
+ 
   const personalSavings = getMemberPersonalSavings(user.id);
   const activeLoan = getMemberActiveLoan(user.id);
   const loanEligibility = getMemberLoanEligibility(user.id);
   const recentSavings = getMemberRecentSavings(user.id);
-
-
-
+ 
   let loanBalance = 0;
   if (activeLoan) {
     const totalDue = activeLoan.principal + (activeLoan.principal * activeLoan.interestRate / 100);
     loanBalance = totalDue - activeLoan.amountPaid;
   }
-
+ 
   const handlePrint = () => {
     window.print();
   };
 
-
-
+ 
   return (
     <div className={`animate-fade-in ${classes.dashboard}`}>
       <div className="flex-between">
@@ -134,8 +131,7 @@ const MemberDashboard = () => {
           )}
         </div>
       </div>
-
-
+ 
     </div>
   );
 };
