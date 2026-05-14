@@ -1,101 +1,52 @@
 # SACCO Backend API
 
-A Node.js/Express backend for the J&J Family SACCO application.
+A Node.js/Express backend for the J&J Family SACCO application, using MongoDB Atlas for persistence.
 
-## Setup
+## 🚀 Setup & Installation
 
-```bash
-cd backend
-npm install
-npm start
-```
+1. **Install Dependencies:**
+   ```bash
+   npm install
+   ```
 
-Server runs on `http://localhost:5000`
+2. **Environment Variables:**
+   Create a `.env` file in this directory:
+   ```env
+   MONGODB_URI=your_mongodb_connection_string
+   PORT=5000
+   ```
 
-## API Endpoints
+3. **Start the Server:**
+   ```bash
+   npm start
+   ```
+
+## 🔌 API Endpoints
 
 ### Authentication
-
-**POST /api/auth/login**
-- Request: `{ username: string, password: string }`
-- Response: `{ user: { id, username, role }, token: string }`
-
-**POST /api/auth/logout**
-- Response: `{ message: string }`
-
-**POST /api/auth/change-password**
-- Request: `{ currentPassword: string, newPassword: string }`
-- Response: `{ message: string }`
+- **POST `/api/auth/login`**: Authenticate user and return token.
+- **POST `/api/auth/logout`**: Terminate session.
+- **POST `/api/auth/change-password`**: Update password for the authenticated user.
 
 ### Members
-
-**GET /api/members**
-- Response: `Member[]`
-
-**POST /api/members**
-- Request: `{ name: string, role?: string }`
-- Response: `{ id, name, role, username, password, joinedAt }`
-
-**GET /api/members/:id**
-- Response: `Member`
-
-**PUT /api/members/:id**
-- Request: `{ name?, role? }`
-- Response: `Member`
-
-**DELETE /api/members/:id**
-- Response: `{ message: string }`
+- **GET `/api/members`**: Retrieve all members.
+- **POST `/api/members`**: Register a new member (auto-generates credentials).
+- **PUT `/api/members/:id`**: Update member details.
+- **DELETE `/api/members/:id`**: Remove a member and their data.
+- **POST `/api/members/airtel-money`**: Submit an Airtel Money transaction for verification.
 
 ### Savings
-
-**GET /api/savings**
-- Response: `Saving[]`
-
-**GET /api/savings/member/:memberId**
-- Response: `Saving[]`
-
-**POST /api/savings**
-- Request: `{ memberId: string, amount: number }`
-- Response: `{ id, memberId, amount, date }`
-
-**GET /api/savings/stats/total**
-- Response: `{ total: number }`
+- **GET `/api/savings`**: List all savings records.
+- **PATCH `/api/savings/:id/verify`**: Verify a pending saving (Admin only).
 
 ### Loans
+- **GET `/api/loans`**: List all loans.
+- **POST `/api/loans`**: Submit a new loan application.
+- **PATCH `/api/loans/:id/approve`**: Approve a pending loan (Admin only).
+- **POST `/api/loans/:id/repayment`**: Record a repayment for an active loan.
 
-**GET /api/loans**
-- Response: `Loan[]`
+## 🗄️ Database
+Data is stored in **MongoDB Atlas**. The connection is managed via Mongoose in `server.js`.
 
-**GET /api/loans/member/:memberId**
-- Response: `Loan[]`
-
-**POST /api/loans**
-- Request: `{ memberId: string, principal: number, interestRate: number, repaymentMonths: number }`
-- Response: `{ id, memberId, principal, interestRate, repaymentMonths, amountPaid, status, dateIssued }`
-
-**POST /api/loans/:loanId/repayment**
-- Request: `{ amount: number }`
-- Response: `Loan`
-
-**GET /api/loans/stats/total-issued**
-- Response: `{ total: number }`
-
-**GET /api/loans/stats/total-repayments**
-- Response: `{ total: number }`
-
-## Data Persistence
-
-- Data is stored in `backend/db/data.json`
-- All changes are automatically saved to the file
-- Database initializes with default admin password: `Adallyn2290`
-
-## CORS Configuration
-
-Frontend should be running on `http://localhost:5173` (Vite default)
-
-## Development
-
-For auto-reload on file changes:
-```bash
-npm run dev
-```
+## 🌐 CORS
+Configured to allow requests from the local dev server and the production GitHub Pages domain.
