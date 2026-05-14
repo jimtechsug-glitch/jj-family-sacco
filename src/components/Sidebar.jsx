@@ -20,6 +20,8 @@ const Sidebar = () => {
   const [passwordData, setPasswordData] = useState({ current: '', new: '', confirm: '' });
   const [passwordError, setPasswordError] = useState('');
   
+  const [isOpen, setIsOpen] = useState(false);
+  
   // Member actions state
   const [showPayModal, setShowPayModal] = useState(false);
   const [showLoanModal, setShowLoanModal] = useState(false);
@@ -30,6 +32,9 @@ const Sidebar = () => {
 
   const activeLoan = user?.role === 'Member' ? getMemberActiveLoan(user.id) : null;
   const loanEligibility = user?.role === 'Member' ? getMemberLoanEligibility(user.id) : 0;
+
+  const toggleSidebar = () => setIsOpen(!isOpen);
+  const closeSidebar = () => setIsOpen(false);
 
   const handleLoanApplication = async (e) => {
     e.preventDefault();
@@ -52,6 +57,7 @@ const Sidebar = () => {
       alert('Loan application submitted successfully! Please wait for admin approval.');
       setShowLoanModal(false);
       setLoanRequest({ principal: '', repaymentMonths: 1, reason: '' });
+      closeSidebar();
     } catch (err) {
       alert('Failed to apply for loan: ' + err.message);
     } finally {
@@ -74,6 +80,7 @@ const Sidebar = () => {
       setShowPayModal(false);
       setPayAmount('');
       setTransactionId('');
+      closeSidebar();
     } catch (err) {
       alert('Failed to process Airtel payment: ' + err.message);
     } finally {
@@ -101,6 +108,7 @@ const Sidebar = () => {
       setShowPasswordModal(false);
       setPasswordData({ current: '', new: '', confirm: '' });
       alert('Password changed successfully!');
+      closeSidebar();
     } catch (err) {
       setPasswordError(err.message);
     } finally {
@@ -119,26 +127,37 @@ const Sidebar = () => {
   ];
 
   return (
-    <aside className={`${classes.sidebar} glass-panel`}>
-      <div className={classes.logo}>
-        <div className={classes.logoIcon}>J&J</div>
-        <h2>Family Sacco</h2>
-      </div>
-      
-      <nav className={classes.nav}>
-        {navItems.map((item) => (
-          <NavLink 
-            key={item.path} 
-            to={item.path} 
-            className={({ isActive }) => 
-              `${classes.navItem} ${isActive ? classes.active : ''}`
-            }
-          >
-            {item.icon}
-            <span>{item.name}</span>
-          </NavLink>
-        ))}
-      </nav>
+    <>
+      <button className={classes.hamburger} onClick={toggleSidebar}>
+        {isOpen ? <LogOut size={24} style={{ transform: 'rotate(90deg)' }} /> : <LayoutDashboard size={24} />}
+      </button>
+
+      <div 
+        className={`${classes.overlay} ${isOpen ? classes.visible : ''}`} 
+        onClick={closeSidebar}
+      />
+
+      <aside className={`${classes.sidebar} glass-panel ${isOpen ? classes.open : ''}`}>
+        <div className={classes.logo}>
+          <div className={classes.logoIcon}>J&J</div>
+          <h2>Family Sacco</h2>
+        </div>
+        
+        <nav className={classes.nav}>
+          {navItems.map((item) => (
+            <NavLink 
+              key={item.path} 
+              to={item.path} 
+              className={({ isActive }) => 
+                `${classes.navItem} ${isActive ? classes.active : ''}`
+              }
+              onClick={closeSidebar}
+            >
+              {item.icon}
+              <span>{item.name}</span>
+            </NavLink>
+          ))}
+        </nav>
 
       <div className={classes.footer}>
         {user?.role === 'Member' && (

@@ -113,7 +113,7 @@ p {
 @media (max-width: 768px) {
   .main-content {
     margin-left: 0;
-    padding: 1rem;
+    padding: 4.5rem 1rem 1.5rem; /* Space for the hamburger button */
     gap: 1.5rem;
   }
 }
@@ -408,7 +408,7 @@ table tbody tr:hover {
 /* Touch-friendly improvements for mobile */
 @media (max-width: 768px) {
   body {
-    padding-bottom: 70px;
+    padding-bottom: 0;
   }
 
   /* Increase touch target sizes */
