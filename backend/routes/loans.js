@@ -164,7 +164,7 @@ router.patch('/:id/approve', async (req, res) => {
     const loan = await Loan.findByIdAndUpdate(
       req.params.id,
       { status: 'Active', date: new Date() }, // Reset date to approval date
-      { new: true }
+      { returnDocument: 'after' }
     );
     if (!loan) return res.status(404).json({ error: 'Loan not found' });
     res.json(loan);
@@ -179,7 +179,7 @@ router.patch('/:id/reject', async (req, res) => {
     const loan = await Loan.findByIdAndUpdate(
       req.params.id,
       { status: 'Rejected' },
-      { new: true }
+      { returnDocument: 'after' }
     );
     if (!loan) return res.status(404).json({ error: 'Loan not found' });
     res.json(loan);

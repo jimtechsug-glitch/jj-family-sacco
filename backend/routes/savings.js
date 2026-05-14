@@ -97,7 +97,7 @@ router.patch('/:id/verify', async (req, res) => {
     const saving = await Savings.findByIdAndUpdate(
       req.params.id,
       { status: 'Verified' },
-      { new: true }
+      { returnDocument: 'after' }
     );
 
     if (!saving) {

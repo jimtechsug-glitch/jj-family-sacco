@@ -71,7 +71,7 @@ router.put('/:id', async (req, res) => {
     const updatedMember = await Member.findByIdAndUpdate(
       req.params.id,
       req.body,
-      { new: true }
+      { returnDocument: 'after' }
     );
 
     if (!updatedMember) {
