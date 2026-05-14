@@ -204,7 +204,7 @@ const Sidebar = () => {
           Change Password
         </button>
 
-        <button className="btn btn-danger" onClick={logout} style={{ width: '100%' }}>
+        <button className={`btn ${classes.logoutBtn}`} onClick={logout}>
           <LogOut size={18} />
           Logout
         </button>
