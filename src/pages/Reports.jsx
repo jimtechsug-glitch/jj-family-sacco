@@ -3,6 +3,9 @@ import { useSacco } from '../context/SaccoContext';
 import { FileText, Download, Wallet, Landmark, Eye } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { Capacitor } from '@capacitor/core';
+import { Filesystem, Directory } from '@capacitor/filesystem';
+import { FileOpener } from '@capacitor-community/file-opener';
 
 const Reports = () => {
   const { 
@@ -131,21 +134,60 @@ const Reports = () => {
     return doc;
   };
 
-  const handlePreview = (docFunc) => {
+  const handlePreview = async (docFunc) => {
     try {
       const doc = docFunc();
-      const string = doc.output('bloburl');
-      window.open(string, '_blank');
+      
+      if (Capacitor.isNativePlatform()) {
+        const base64 = doc.output('datauristring').split(',')[1];
+        const fileName = `report_preview_${Date.now()}.pdf`;
+        
+        const savedFile = await Filesystem.writeFile({
+          path: fileName,
+          data: base64,
+          directory: Directory.Cache
+        });
+
+        await FileOpener.open({
+          filePath: savedFile.uri,
+          contentType: 'application/pdf'
+        });
+      } else {
+        const string = doc.output('bloburl');
+        window.open(string, '_blank');
+      }
     } catch (err) {
       console.error('PDF Preview Error:', err);
       alert('Failed to generate preview: ' + err.message);
     }
   };
 
-  const handleDownload = (docFunc, filename) => {
+  const handleDownload = async (docFunc, filename) => {
     try {
       const doc = docFunc();
-      doc.save(filename);
+      
+      if (Capacitor.isNativePlatform()) {
+        const base64 = doc.output('datauristring').split(',')[1];
+        
+        // On Android, we can try to save to Documents or just tell the user where it is
+        const savedFile = await Filesystem.writeFile({
+          path: filename,
+          data: base64,
+          directory: Directory.Documents
+        });
+
+        alert(`Report saved to Documents: ${filename}`);
+        
+        // Optionally open it immediately
+        if (window.confirm('Would you like to open the report now?')) {
+          await FileOpener.open({
+            filePath: savedFile.uri,
+            contentType: 'application/pdf'
+          });
+        }
+      } else {
+        doc.save(filename);
+      }
     } catch (err) {
       console.error('PDF Download Error:', err);
       alert('Failed to download report: ' + err.message);

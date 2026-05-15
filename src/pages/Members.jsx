@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useSacco } from '../context/SaccoContext';
-import { UserPlus, Search, Trash2, Edit2 } from 'lucide-react';
+import { UserPlus, Search, Trash2, Edit2, Eye, EyeOff } from 'lucide-react';
 import classes from './Members.module.css';
 
 const Members = () => {
@@ -13,6 +13,7 @@ const Members = () => {
   const [newCredentials, setNewCredentials] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleEditMember = async (e) => {
     e.preventDefault();
@@ -268,13 +269,24 @@ const Members = () => {
               </div>
               <div className="form-group">
                 <label>Password</label>
-                <input
-                  type="text" className="form-control"
-                  value={editingMember.password}
-                  onChange={(e) => setEditingMember({ ...editingMember, password: e.target.value })}
-                  required
-                  placeholder="Enter new password or keep existing"
-                />
+                <div className={classes.passwordWrapper}>
+                  <input
+                    type={showPassword ? "text" : "password"} 
+                    className="form-control"
+                    value={editingMember.password}
+                    onChange={(e) => setEditingMember({ ...editingMember, password: e.target.value })}
+                    required
+                    placeholder="Enter new password or keep existing"
+                  />
+                  <button
+                    type="button"
+                    className={classes.visibilityToggle}
+                    onClick={() => setShowPassword(!showPassword)}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                  </button>
+                </div>
               </div>
               <div className={classes.modalActions}>
                 <button type="button" className="btn" onClick={() => { setShowEditModal(false); setEditingMember(null); }}>Cancel</button>

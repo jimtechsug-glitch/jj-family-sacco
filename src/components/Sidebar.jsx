@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Users, Wallet, Landmark, FileText, LogOut, Settings, Send } from 'lucide-react';
+import { LayoutDashboard, Users, Wallet, Landmark, FileText, LogOut, Settings, Send, Eye, EyeOff } from 'lucide-react';
 import { useSacco } from '../context/SaccoContext';
 import classes from './Sidebar.module.css';
 import AirtelMoneyLogo from '../assets/airtel-money-logo.png';
@@ -19,6 +19,7 @@ const Sidebar = () => {
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [passwordData, setPasswordData] = useState({ current: '', new: '', confirm: '' });
   const [passwordError, setPasswordError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   
   const [isOpen, setIsOpen] = useState(false);
   
@@ -291,38 +292,65 @@ const Sidebar = () => {
             <form onSubmit={handlePasswordChange}>
               <div className="form-group" style={{ textAlign: 'left' }}>
                 <label>Current Password</label>
-                <input
-                  type="password"
-                  className="form-control"
-                  value={passwordData.current}
-                  onChange={(e) => setPasswordData({ ...passwordData, current: e.target.value })}
-                  required
-                  style={{ width: '100%' }}
-                />
+                <div className={classes.passwordWrapper}>
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    className="form-control"
+                    value={passwordData.current}
+                    onChange={(e) => setPasswordData({ ...passwordData, current: e.target.value })}
+                    required
+                    style={{ width: '100%' }}
+                  />
+                  <button
+                    type="button"
+                    className={classes.visibilityToggle}
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
               </div>
 
               <div className="form-group" style={{ textAlign: 'left', marginTop: '1rem' }}>
                 <label>New Password</label>
-                <input
-                  type="password"
-                  className="form-control"
-                  value={passwordData.new}
-                  onChange={(e) => setPasswordData({ ...passwordData, new: e.target.value })}
-                  required
-                  style={{ width: '100%' }}
-                />
+                <div className={classes.passwordWrapper}>
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    className="form-control"
+                    value={passwordData.new}
+                    onChange={(e) => setPasswordData({ ...passwordData, new: e.target.value })}
+                    required
+                    style={{ width: '100%' }}
+                  />
+                  <button
+                    type="button"
+                    className={classes.visibilityToggle}
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
               </div>
 
               <div className="form-group" style={{ textAlign: 'left', marginTop: '1rem' }}>
                 <label>Confirm New Password</label>
-                <input
-                  type="password"
-                  className="form-control"
-                  value={passwordData.confirm}
-                  onChange={(e) => setPasswordData({ ...passwordData, confirm: e.target.value })}
-                  required
-                  style={{ width: '100%' }}
-                />
+                <div className={classes.passwordWrapper}>
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    className="form-control"
+                    value={passwordData.confirm}
+                    onChange={(e) => setPasswordData({ ...passwordData, confirm: e.target.value })}
+                    required
+                    style={{ width: '100%' }}
+                  />
+                  <button
+                    type="button"
+                    className={classes.visibilityToggle}
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
               </div>
 
               {passwordError && (

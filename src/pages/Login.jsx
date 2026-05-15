@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useSacco } from '../context/SaccoContext';
+import { Eye, EyeOff } from 'lucide-react';
 import classes from './Login.module.css';
 
 const Login = () => {
@@ -8,6 +9,7 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -50,14 +52,24 @@ const Login = () => {
 
           <div className="form-group">
             <label>Password</label>
-            <input
-              type="password"
-              className="form-control"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter password"
-              required
-            />
+            <div className={classes.passwordWrapper}>
+              <input
+                type={showPassword ? "text" : "password"}
+                className="form-control"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter password"
+                required
+              />
+              <button
+                type="button"
+                className={classes.visibilityToggle}
+                onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            </div>
           </div>
 
           <button 
